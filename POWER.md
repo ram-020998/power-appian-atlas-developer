@@ -44,6 +44,40 @@ Each parsed application contains:
 5. `get_dependencies(app, object_name)` → trace dependency chains
 6. `list_orphans(app)` → identify unused/legacy code
 
+## Enrichment tools for developers (NEW)
+7. `get_enrichment_metadata(app)` → check if enrichment data available
+8. `search_by_depth(app, depth)` → find objects at specific architecture layer (0=entry points)
+9. `get_object_enrichment(app, uuid)` → get dependency depth, complexity metrics, reuse statistics
+10. `search_by_tags(app, tags)` → find patterns (e.g., `["integration_heavy", "complex"]`)
+11. `get_dependency_depths(app, max_depth)` → understand architecture layering
+
+## Phase 1 efficiency tools for developers (NEW) 🆕
+12. `get_statistics(app, stat_type, filters)` → instant aggregated stats without loading full data
+    - `"bundle_complexity"` → find most complex bundles to prioritize refactoring
+    - `"object_reuse"` → find most reused objects (high impact if changed)
+    - `"tag_distribution"` → count objects by pattern (approval workflows, integrations, etc.)
+    - `"orphan_summary"` → technical debt analysis by type
+13. `batch_get(app, operation, identifiers)` → load multiple objects in one call
+    - `operation="objects"` → get multiple object details for comparison
+    - `operation="enrichments"` → get enrichment data for multiple objects
+    - `operation="dependencies"` → trace dependencies for multiple objects
+14. `smart_query(app, query_type, **params)` → common patterns in one call
+    - `"find_and_load_bundle"` → search + load implementation in one call
+    - `"find_and_get_object"` → search + get details in one call
+    - `"most_reused"` → top reused objects with enrichment data
+
+**Use enrichment for**:
+- **Refactoring**: Find high-depth objects (candidates for extraction)
+- **Impact analysis**: Check dependent_count before modifying shared utilities
+- **Code review**: Identify complex objects (`tags: ["complex"]`)
+- **Architecture**: Understand layering through dependency depth
+- **Technical debt**: Find orphaned objects and unused code
+
+**Use Phase 1 tools for**:
+- **Quick analysis**: Get counts and distributions instantly
+- **Batch operations**: Load multiple objects for comparison/review
+- **Efficient queries**: Combine search + load in one call
+
 # Response Guidelines
 
 ## When discussing objects:
@@ -291,6 +325,37 @@ User: "Are there any orphaned expression rules?"
    - Frequently called utilities that could be optimized
 ```
 
+## Workflow 6: Quick impact analysis (NEW - Phase 1) 🆕
+```
+1. get_statistics("App", "object_reuse", {"limit": 20, "min_count": 10})
+   → Find most reused objects (high impact if changed)
+2. For target object, get_dependencies() → see all consumers
+3. batch_get("App", "enrichments", [uuid1, uuid2, ...])
+   → Get enrichment data for all consumers in one call
+4. Analyze depth and complexity of impacted objects
+```
+
+## Workflow 7: Refactoring prioritization (NEW - Phase 1) 🆕
+```
+1. get_statistics("App", "bundle_complexity", {"limit": 10})
+   → Find most complex bundles
+2. smart_query("App", "find_and_load_bundle", query="<bundle_name>", detail_level="structure")
+   → Load structure in one call
+3. search_by_tags("App", ["complex", "integration_heavy"])
+   → Find complex integration objects within bundle
+4. Prioritize refactoring based on complexity + reuse
+```
+
+## Workflow 8: Code review efficiency (NEW - Phase 1) 🆕
+```
+1. Get list of changed object UUIDs from version control
+2. batch_get("App", "objects", [uuid1, uuid2, ...])
+   → Load all changed objects in one call
+3. batch_get("App", "enrichments", [uuid1, uuid2, ...])
+   → Get enrichment data for all in one call
+4. Review based on depth, tags, and dependent_count
+```
+
 ---
 
 # Performance Tips
@@ -299,6 +364,9 @@ User: "Are there any orphaned expression rules?"
 2. **Cache UUIDs**: Once you have a UUID, use `get_object_detail()` instead of name lookup
 3. **Trace dependencies systematically**: Build a dependency map to avoid redundant calls
 4. **Check orphans regularly**: Technical debt accumulates over time
+5. **Use batch operations**: Load multiple objects with `batch_get()` instead of individual calls 🆕
+6. **Use smart queries**: Combine search + load with `smart_query()` for common patterns 🆕
+7. **Get stats first**: Use `get_statistics()` for quick analysis before loading full data 🆕
 
 ---
 
