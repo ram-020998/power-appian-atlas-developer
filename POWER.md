@@ -98,6 +98,35 @@ Each parsed application contains:
 ## When discussing code:
 - Show relevant SAIL code snippets
 - Explain parameters, return types, and side effects
+- **For SAIL syntax, functions, or best practices**: Use the `power-appian-reference` power via subagent delegation
+
+## Using the SAIL Reference Power
+
+When you need to generate or validate SAIL code, query the `power-appian-reference` power:
+
+**Query via subagent for:**
+- SAIL function signatures and parameters
+- Syntax rules and operators
+- Common SAIL mistakes and anti-patterns
+- Appian design best practices
+- Accessibility guidelines for components
+- Naming conventions and code structure
+
+**Example queries:**
+```
+"Query power-appian-reference: How do I use a!forEach with UI components?"
+"Query power-appian-reference: What are the parameters for a!queryEntity?"
+"Query power-appian-reference: Show me the correct way to use local variables"
+"Query power-appian-reference: What are common mistakes with a!save?"
+"Query power-appian-reference: How do I make a grid accessible?"
+```
+
+**When to use it:**
+- Generating SAIL expressions or interface code
+- Validating SAIL syntax before suggesting changes
+- Explaining SAIL functions to developers
+- Reviewing code for best practices compliance
+- Ensuring accessibility standards are met
 - Highlight integration patterns and data transformations
 
 ## Code quality observations:
