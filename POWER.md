@@ -75,14 +75,14 @@ Each parsed application contains:
 5. `get_dependencies(app, object_name)` → trace dependency chains
 6. `list_orphans(app)` → identify unused/legacy code
 
-## Enrichment tools for developers
+## Enrichment tools for developers (NEW)
 7. `get_enrichment_metadata(app)` → check if enrichment data available
 8. `search_by_depth(app, depth)` → find objects at specific architecture layer (0=entry points)
 9. `get_object_enrichment(app, uuid)` → get dependency depth, complexity metrics, reuse statistics
 10. `search_by_tags(app, tags)` → find patterns (e.g., `["integration_heavy", "complex"]`)
 11. `get_dependency_depths(app, max_depth)` → understand architecture layering
 
-## Phase 1 efficiency tools for developers 🆕
+## Phase 1 efficiency tools for developers (NEW) 🆕
 12. `get_statistics(app, stat_type, filters)` → instant aggregated stats without loading full data
     - `"bundle_complexity"` → find most complex bundles to prioritize refactoring
     - `"object_reuse"` → find most reused objects (high impact if changed)
@@ -108,51 +108,6 @@ Each parsed application contains:
 - **Quick analysis**: Get counts and distributions instantly
 - **Batch operations**: Load multiple objects for comparison/review
 - **Efficient queries**: Combine search + load in one call
-
----
-
-# MCP Tool Reference
-
-## Tool: `list_applications`
-**Purpose**: Discover all available Appian applications with technical stats.
-**Returns**: Array with object counts, error counts, bundle coverage, and bundles by type.
-
-## Tool: `get_app_overview`
-**Purpose**: Get complete technical map of the application.
-**Args**: `app_name`
-**Returns**: Package info, object counts by type, all bundles with metadata, dependency summary, coverage stats.
-
-## Tool: `search_objects`
-**Purpose**: Find objects by name with technical details.
-**Args**: `app_name`, `query`, `object_type` (optional)
-**Returns**: Matching objects with UUID, type, bundles, dependency counts. Max 50 results.
-
-## Tool: `get_bundle`
-**Purpose**: Load bundle with implementation details.
-**Args**: `app_name`, `bundle_id`, `detail_level` ("summary" | "structure" | "full")
-
-## Tool: `search_bundles`
-**Purpose**: Find bundles by name.
-**Args**: `app_name`, `query`, `bundle_type` (optional)
-
-## Tool: `get_dependencies`
-**Purpose**: Trace dependency graph for an object.
-**Args**: `app_name`, `object_name`
-**Returns**: Object metadata with `calls[]` and `called_by[]` arrays.
-
-## Tool: `get_object_detail`
-**Purpose**: Full object detail by UUID.
-**Args**: `app_name`, `object_uuid`
-
-## Tool: `list_orphans`
-**Purpose**: Identify unbundled objects (potential technical debt).
-**Args**: `app_name`
-
-## Tool: `get_orphan`
-**Purpose**: Get full details and code for an orphaned object.
-**Args**: `app_name`, `object_uuid`
-
----
 
 # Response Guidelines
 
@@ -188,10 +143,199 @@ When you need to generate or validate SAIL code, query the `power-appian-referen
 - Accessibility guidelines for components
 - Naming conventions and code structure
 
+**Example queries:**
+```
+"Query power-appian-reference: How do I use a!forEach with UI components?"
+"Query power-appian-reference: What are the parameters for a!queryEntity?"
+"Query power-appian-reference: Show me the correct way to use local variables"
+"Query power-appian-reference: What are common mistakes with a!save?"
+"Query power-appian-reference: How do I make a grid accessible?"
+```
+
+**When to use it:**
+- Generating SAIL expressions or interface code
+- Validating SAIL syntax before suggesting changes
+- Explaining SAIL functions to developers
+- Reviewing code for best practices compliance
+- Ensuring accessibility standards are met
+- Highlight integration patterns and data transformations
+
 ## Code quality observations:
 - Point out orphaned objects that may be technical debt
 - Identify objects with high dependency counts (potential refactoring candidates)
 - Note missing descriptions or poor naming conventions
+
+# MCP Tool Reference
+
+## Tool: `list_applications`
+**Purpose**: Discover all available Appian applications with technical stats.
+
+**Returns**: Array with object counts, error counts, bundle coverage, and bundles by type.
+
+**Example**:
+```
+User: "What apps are available?"
+→ Call list_applications()
+→ Response: "There are 2 applications:
+   - SourceSelection: 2,327 objects, 47 bundles (42 actions, 3 processes, 2 pages)
+   - CaseManagementStudio: 1,856 objects, 38 bundles"
+```
+
+---
+
+## Tool: `get_app_overview`
+**Purpose**: Get complete technical map of the application.
+
+**Args**: `app_name`
+
+**Returns**: Package info, object counts by type, all bundles with metadata, dependency summary, coverage stats.
+
+**Developer focus**: Use this to understand the technical architecture, identify high-dependency objects, and assess bundle coverage.
+
+**Example**:
+```
+User: "Give me a technical overview of SourceSelection"
+→ Call get_app_overview("SourceSelection")
+→ Response: "SourceSelection contains 2,327 objects:
+   - 364 Interfaces
+   - 287 Expression Rules
+   - 89 Process Models
+   - 47 bundles covering 1,963 objects (84% coverage)
+   - Top dependencies: AS_GSS_BL_validateVendors (called by 23 objects)"
+```
+
+---
+
+## Tool: `search_objects`
+**Purpose**: Find objects by name with technical details.
+
+**Args**: `app_name`, `query`, `object_type` (optional)
+
+**Returns**: Matching objects with UUID, type, bundles, dependency counts.
+
+**Developer focus**: Always show UUID and dependency counts. Mention if object is orphaned.
+
+**Example**:
+```
+User: "Find the addVendors interface"
+→ Call search_objects("SourceSelection", "addVendors", "Interface")
+→ Response: "Found AS_GSS_FM_addVendors (Interface)
+   - UUID: _a-0000e30a-8a5c-8000-cd8e-011c48011c48_19692
+   - Used in bundle: action__SourceSelection__Add_Vendors
+   - Dependencies: 8 outbound, 1 inbound"
+```
+
+---
+
+## Tool: `get_bundle`
+**Purpose**: Load bundle with implementation details.
+
+**Args**: `app_name`, `bundle_id`, `detail_level` ("summary" | "structure" | "full")
+
+**Developer focus**: Use `"full"` by default to access SAIL code. Explain the technical flow and key implementation details.
+
+**Example**:
+```
+User: "How is the Add Vendors action implemented?"
+→ Call get_bundle("SourceSelection", "action__SourceSelection__Add_Vendors", "full")
+→ Response: "The Add Vendors action (Record Action) triggers process model AS_GSS_PM_addVendors.
+   
+   Technical flow:
+   1. Entry form: AS_GSS_FM_addVendors (Interface)
+      - Parameters: ri!sourceSelection (SourceSelection CDT)
+      - Calls: AS_GSS_BL_validateVendors for validation
+   2. Process model: AS_GSS_PM_addVendors
+      - Writes to SourceSelection record
+      - Calls integration: AS_GSS_INT_notifyVendors
+   
+   Key SAIL code from AS_GSS_FM_addVendors:
+   ```sail
+   a!formLayout(
+     contents: {
+       a!textField(label: "Vendor Name", value: local!vendorName),
+       ...
+     },
+     buttons: a!buttonLayout(
+       primaryButtons: a!buttonWidget(
+         label: "Submit",
+         validate: rule!AS_GSS_BL_validateVendors(local!vendorName)
+       )
+     )
+   )
+   ```"
+```
+
+---
+
+## Tool: `get_dependencies`
+**Purpose**: Trace dependency graph for an object.
+
+**Args**: `app_name`, `object_name`
+
+**Returns**: Object metadata with `calls[]` and `called_by[]` arrays.
+
+**Developer focus**: Show full dependency chains, identify shared utilities, flag high coupling.
+
+**Example**:
+```
+User: "What depends on AS_GSS_BL_validateVendors?"
+→ Call get_dependencies("SourceSelection", "AS_GSS_BL_validateVendors")
+→ Response: "AS_GSS_BL_validateVendors (Expression Rule) is a shared validation utility.
+   
+   Called by 5 objects:
+   - AS_GSS_FM_addVendors (Interface) - form validation
+   - AS_GSS_FM_editVendor (Interface) - edit form validation
+   - AS_GSS_PM_bulkImport (Process Model) - batch validation
+   - AS_GSS_WA_vendorAPI (Web API) - API input validation
+   - AS_GSS_ER_vendorHelper (Expression Rule) - helper function
+   
+   Calls 2 objects:
+   - AS_GSS_CDT_Vendor (CDT) - type definition
+   - AS_GSS_ER_regexPatterns (Expression Rule) - validation patterns
+   
+   Impact: Changes to this rule affect 5 consumers across 4 bundles."
+```
+
+---
+
+## Tool: `list_orphans`
+**Purpose**: Identify unbundled objects (potential technical debt).
+
+**Args**: `app_name`
+
+**Returns**: Orphaned objects grouped by type.
+
+**Developer focus**: Treat orphans as technical debt candidates. Investigate why they're not bundled.
+
+**Example**:
+```
+User: "Are there any orphaned expression rules?"
+→ Call list_orphans("SourceSelection")
+→ Response: "Found 47 orphaned objects (not reachable from any entry point):
+   
+   Expression Rules (12):
+   - AS_GSS_BL_legacyVendorValidation (UUID: _a-0000e30a...)
+   - AS_GSS_ER_deprecatedHelper (UUID: _a-0000e30b...)
+   - ...
+   
+   These may be:
+   - Legacy code from previous versions
+   - Utilities that were replaced
+   - Dead code that can be removed
+   
+   Recommendation: Review each orphan to determine if it's still needed."
+```
+
+---
+
+## Tool: `get_orphan`
+**Purpose**: Get full details and code for an orphaned object.
+
+**Args**: `app_name`, `object_uuid`
+
+**Returns**: Object metadata, SAIL code, dependencies.
+
+**Developer focus**: Analyze why it's orphaned and whether it can be safely removed.
 
 ---
 
@@ -231,7 +375,17 @@ When you need to generate or validate SAIL code, query the `power-appian-referen
    - Legacy → needs migration plan
 ```
 
-## Workflow 5: Quick impact analysis 🆕
+## Workflow 5: Performance optimization
+```
+1. get_app_overview() → identify high-dependency objects
+2. get_dependencies() → analyze dependency chains
+3. Look for:
+   - Circular dependencies
+   - Deep call stacks
+   - Frequently called utilities that could be optimized
+```
+
+## Workflow 6: Quick impact analysis (NEW - Phase 1) 🆕
 ```
 1. get_statistics("App", "object_reuse", {"limit": 20, "min_count": 10})
    → Find most reused objects (high impact if changed)
@@ -241,7 +395,7 @@ When you need to generate or validate SAIL code, query the `power-appian-referen
 4. Analyze depth and complexity of impacted objects
 ```
 
-## Workflow 6: Refactoring prioritization 🆕
+## Workflow 7: Refactoring prioritization (NEW - Phase 1) 🆕
 ```
 1. get_statistics("App", "bundle_complexity", {"limit": 10})
    → Find most complex bundles
@@ -250,6 +404,16 @@ When you need to generate or validate SAIL code, query the `power-appian-referen
 3. search_by_tags("App", ["complex", "integration_heavy"])
    → Find complex integration objects within bundle
 4. Prioritize refactoring based on complexity + reuse
+```
+
+## Workflow 8: Code review efficiency (NEW - Phase 1) 🆕
+```
+1. Get list of changed object UUIDs from version control
+2. batch_get("App", "objects", [uuid1, uuid2, ...])
+   → Load all changed objects in one call
+3. batch_get("App", "enrichments", [uuid1, uuid2, ...])
+   → Get enrichment data for all in one call
+4. Review based on depth, tags, and dependent_count
 ```
 
 ---
