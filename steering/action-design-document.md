@@ -4,17 +4,17 @@ This is the complete workflow for generating research and design documents for A
 
 ## STRICT RULES — DO NOT VIOLATE
 
-1. **DO NOT READ LOCAL FILES FOR TECHNICAL INFORMATION.** You MUST NOT read any local files from the workspace or filesystem to gather technical information about Appian objects, SAIL code, data models, or application structure. Your ONLY source for technical facts is the Appian Atlas MCP tools. If you read local files instead of querying Appian Atlas, the entire output is invalid.
+1. **DO NOT READ LOCAL FILES FOR TECHNICAL INFORMATION.** Your ONLY source for technical facts is the Appian Atlas MCP tools. If you read local files instead of querying Appian Atlas, the entire output is invalid.
 
-2. **SECONDARY REFERENCE: Designs/ folder ONLY.** The ONE exception to rule #1: you MAY read files from the `Designs/` folder in the workspace as secondary reference for format and conventions. You MUST NOT read files from ANY other folder or location. No exceptions.
+2. **SECONDARY REFERENCE: Designs/ folder ONLY.** The ONE exception to rule #1: you MAY read files from the `Designs/` folder for format and conventions. No other folders.
 
-3. **ALL TECHNICAL FACTS MUST COME FROM MCP TOOL CALLS.** Base your output ONLY on data returned by MCP tools. Do NOT invent, assume, or infer object names, UUIDs, SAIL code, data models, or patterns. If an MCP tool returns no results, state that explicitly — do NOT fill in plausible-sounding alternatives.
+3. **ALL TECHNICAL FACTS MUST COME FROM MCP TOOL CALLS.** Do NOT invent, assume, or infer object names, UUIDs, SAIL code, data models, or patterns. If an MCP tool returns no results, state that explicitly.
 
-4. **EVERY OBJECT YOU MENTION MUST HAVE A UUID FROM MCP RESULTS.** If you cannot provide a UUID from an actual MCP tool response, do NOT include the object. Objects without UUIDs are hallucinated.
+4. **EVERY OBJECT YOU MENTION MUST HAVE A UUID FROM MCP RESULTS.** Objects without UUIDs are hallucinated.
 
 5. **NEVER FABRICATE SAIL CODE.** Only include SAIL code returned by `get_bundle` with `detail_level="full"`.
 
-6. **JIRA STORY NUMBER REQUIRED.** If the user has not provided one, stop and ask. Do NOT proceed without it.
+6. **JIRA STORY NUMBER REQUIRED.** If the user has not provided one, stop and ask.
 
 ## Step 1: Validate Input
 
@@ -22,7 +22,7 @@ Confirm the user has provided a Jira story number (e.g., GAM-15177, GAMS-7127). 
 
 ## Step 2: Create Output Folder
 
-Create `Designs/<JIRA-NUMBER>/` using the ticket number in CAPS. No descriptions, no underscores — just the ticket number.
+Create `Designs/<JIRA-NUMBER>/` using the ticket number in CAPS.
 
 ## Step 3: Research Phase
 
@@ -32,13 +32,7 @@ Execute the following MCP tool call sequence. Do NOT skip steps. Do NOT write re
 
 1. **Call `get_app_overview`** for the target application.
 
-2. **Call `search_objects`** for EACH keyword from the story. Try at least 3-5 keyword variations. Example for "evaluation summary":
-   - "evaluation summary"
-   - "EvaluationSummary"
-   - "evalSummary"
-   - "summary"
-   - "evaluation"
-   Also filter by `object_type` when the story implies it (e.g., `"Interface"` for UI stories).
+2. **Call `search_objects`** for EACH keyword from the story. Try at least 3-5 keyword variations. Also filter by `object_type` when the story implies it.
 
 3. **Call `search_bundles`** for the same keywords.
 
@@ -84,7 +78,7 @@ EVERY row must have a real UUID. No exceptions.
 
 **Existing Patterns** — Similar implementations found via MCP.
 
-**Not Found / Gaps** — What the story requires but was NOT found. Critical for design phase.
+**Not Found / Gaps** — What the story requires but was NOT found.
 
 **Key Findings** — Observations, risks, recommendations.
 
@@ -101,87 +95,99 @@ If research lacks MCP-sourced data, re-run searches with different keywords befo
 
 Read research.md, then write `Designs/<JIRA-NUMBER>/design.md` using ONLY objects confirmed in the research (with UUIDs). Clearly mark new objects.
 
-### Design Document Format — EXACT TEMPLATE
+### Design Document Template
 
 ```markdown
-# [<TICKET-ID> | GSS: <Title>](<jira-link>) {#<ticket-id-lowercase>-|-gss:-<title-lowercase-hyphenated>}
+# <TICKET-ID>: <Title>
 
-| People Designer: <name> Design Reviewer: Developer: Peer Reviewer: | Helpful Links [Principles & Rules](https://docs.google.com/document/d/1DQ4TmCCQ9wybii1eGhXk1ZiLx0Ldj8w8x1wCNVG7lLM/edit#heading=h.xhblfpgm25om) Example Expression Rule Design Doc Common patterns: [Async process](https://docs.google.com/document/d/12ccIJMZvi8p9EgsVkbI_jG1GFRAMLPc_NNgAl7L9dBU/edit#) UI pattern/map configuration [Example Interface Design Doc](#<ticket-id-lowercase>-|-gss:-<title-lowercase-hyphenated>) Example Decision Design Doc |
-| :---- | :---- |
+**Jira:** [<TICKET-ID>](<jira-link>)
+**Designer:** <name>
+**Date:** <date>
 
-### Before Development
+## Problem
 
-| Detailed Design Notes <all object instructions here as continuous block> *Note: SDX configuration needs to be updated based on the UI changes. Make sure the validations and conditions in the screens are retained and verified. Make sure to replicate any accessibility, font or size changes mentioned in the mockup.* |
-| :---- |
-|  |
+<What's broken or missing. Why this work matters. Reference the Jira story requirements.>
 
-| Mock Ups <links or "To be provided"> |
-| :---- |
+## Solution
 
-| Test Cases <continuous text, each starting with "Verify if"> |
-| :---- |
+<High-level approach. What we're building and the key design decisions made.
+Mention the application area affected and the general strategy (new bundle, extend existing, etc.).>
 
-### After Development
+## Implementation Details
 
-| Code Changes & Peer Review  |
-| :---- |
+### Objects Created (New)
 
-### 
+| Object | Type | Purpose |
+|---|---|---|
+| AS_GSS_FM_objectName (New) | Interface | Description of what it does |
+| AS_GSS_ER_objectName (New) | Expression Rule | Description of what it does |
 
-| Deployment |
+<For each new object, add implementation notes below the table:>
+
+**AS_GSS_FM_objectName (New)**
+<What this object does, key rule inputs, behavior, validations.>
+
+**AS_GSS_ER_objectName (New)**
+<Logic description, parameters, return type.>
+
+### Objects Modified
+
+| Object | Type | UUID | Change |
+|---|---|---|---|
+| AS_GSS_FM_existingObject | Interface | abc-123-... | Add new tab for vendor details |
+| AS_GSS_PM_existingProcess | Process Model | def-456-... | Add approval node after creation |
+
+<For each modified object, describe the specific changes:>
+
+**AS_GSS_FM_existingObject** (`abc-123-...`)
+<What to change, where in the code, reference SAIL line numbers from research if available.>
+
+**AS_GSS_PM_existingProcess** (`def-456-...`)
+<Specific modifications needed.>
+
+### Data Flow
+
+<Step-by-step flow of how data moves through the system:>
+1. User opens <interface> → fills in <fields>
+2. On submit, calls <expression rule> with <parameters>
+3. <Expression rule> validates and saves to <CDT>
+4. <Process model> triggers <next step>
+
+### Data Model Changes
+
+| CDT | Field | Type | Change |
+|---|---|---|---|
+| AS_GSS_CDT_Vendor | status | Text | New field |
+| AS_GSS_CDT_Vendor | approvedBy | User | New field |
+
+### Dependencies
+
+<Key dependency relationships that matter for this change.
+Which shared utilities are affected, what calls what.>
+
+## Test Cases
+
+- Verify if <test case 1>
+- Verify if <test case 2>
+- Verify if <test case 3>
+- Verify if existing validations are retained after changes
+- Verify if accessibility requirements are met
+
+## Risks & Notes
+
+- <Any edge cases, deployment order concerns, SDX config changes>
+- <Performance considerations>
+- <Backward compatibility notes>
+- SDX configuration needs to be updated based on UI changes. Ensure validations and conditions are retained and verified.
 ```
 
-### Detailed Design Notes Format
+### Template Rules
 
-All instructions in a SINGLE table cell as continuous text.
-
-**NEW objects:**
-```
-AS_GSS_<ObjectName> (New)
-Create this new <type> which <purpose>.
-<Implementation details as continuous text>
-Add below rule inputs to the interface
-<rule inputs, one per line>
-```
-
-**EXISTING objects** (must have UUID in research — just use name in design):
-```
-AS_GSS_<ObjectName>
-<Specific instructions — what to change and where>
-<Reference line numbers from research SAIL code>
-```
-
-**Field layout diagrams** — include when rearranging UI fields:
-```
-The layout is attached below for reference.
-Factors
-Factor Id		Title
-Due Date		Factor Chair
-Rating Method	Instructions
-Description
-```
-
-**Closing note** — ALWAYS at the end:
-```
-*Note: SDX configuration needs to be updated based on the UI changes. Make sure the validations and conditions in the screens are retained and verified. Make sure to replicate any accessibility, font or size changes mentioned in the mockup.*
-```
-
-### Test Cases Format
-
-Continuous text, each starting with "Verify if":
-```
-Verify if the empty state screen is as per the mockup provided.
-Verify if the Labels, Headers and Buttons are as per the new design.
-Verify if existing validations are retained after the UI changes.
-```
-
-### Mock Ups
-
-Links with descriptive labels from the story. If none, write "To be provided".
-
-### After Development
-
-Leave empty — filled post-implementation.
+- **New objects**: Always marked with `(New)` in the table. No UUID (they don't exist yet).
+- **Modified objects**: MUST have UUID from research. If no UUID, it doesn't go in the design.
+- **Data Flow**: Always include — shows how the pieces connect.
+- **Test Cases**: Each starts with "Verify if".
+- **Risks & Notes**: Always include SDX note for UI changes.
 
 ## Step 6: Summary
 
@@ -197,5 +203,5 @@ Report to user:
 - If `get_dependencies` returns an error, say "Dependencies not available for '<object>'"
 - NEVER write "the standard pattern is..." without citing a specific MCP result
 - NEVER invent constant names, expression rule names, or interface names
-- New objects: mark as "TO BE CREATED" with no UUID
+- New objects: mark as "(New)" with no UUID
 - Existing objects in design: ONLY those with UUIDs from research
