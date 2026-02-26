@@ -129,6 +129,18 @@ When you need to generate or validate SAIL code, query the `power-appian-referen
 - Ensuring accessibility standards are met
 - Highlight integration patterns and data transformations
 
+## Design Document Generation
+
+When asked to create a design document, research a story, or generate implementation docs for a Jira ticket, follow the complete workflow defined in the **design-document-workflow** steering file. This workflow:
+
+1. Validates the Jira story number
+2. Creates the output folder (`Designs/<JIRA-NUMBER>/`)
+3. Runs a research phase — querying Appian Atlas MCP tools exhaustively
+4. Validates research quality (UUIDs, query log)
+5. Produces a design document in the team's standard format
+
+**Critical**: All technical facts in the research and design documents MUST come from MCP tool calls. Do NOT read local files for technical information — only the `Designs/` folder may be read as secondary reference. Every object referenced must have a UUID from MCP results.
+
 ## Code quality observations:
 - Point out orphaned objects that may be technical debt
 - Identify objects with high dependency counts (potential refactoring candidates)
